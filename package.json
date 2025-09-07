@@ -1,0 +1,27 @@
+{
+  "name": "audiovisualizer",
+  "version": "1.0.0",
+  "main": "index.ts",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
+    "web": "expo start --web"
+  },
+  "dependencies": {
+    "expo": "~53.0.17",
+    "expo-status-bar": "~2.2.3",
+    "react": "19.0.0",
+    "react-native": "0.79.5",
+    "react-native-audio-api": "^0.6.4",
+    "@shopify/react-native-skia": "v2.0.0-next.4",
+    "react-native-reanimated": "~3.17.4",
+    "expo-file-system": "~18.1.11"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.25.2",
+    "@types/react": "~19.0.10",
+    "typescript": "~5.8.3"
+  },
+  "private": true
+}
