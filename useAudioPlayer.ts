@@ -21,15 +21,90 @@ export const useAudioPlayer = (audioUrl: string) => {
   const startTimeRef = useRef<number>(0);
   const pausedTimeRef = useRef<number>(0);
 
-  const draw = () => {};
+  const draw = () => {
+    if (!analyserRef.current) {
+      return;
+    }
 
-  const handlePlayPause = () => {};
+    const frequencyArrayLength = analyserRef.current.frequencyBinCount;
+    const freqsArray = new Uint8Array(frequencyArrayLength);
+    analyserRef.current.getByteFrequencyData(freqsArray);
 
-  const getCurrentPlaybackTime = () => {};
+    setFreqs(freqsArray);
 
-  const percentComplete = 0;
+    requestAnimationFrame(draw);
+  };
 
-  useEffect(() => {}, [audioUrl]);
+  const handlePlayPause = () => {
+    if (isPlaying) {
+      bufferSourceRef.current?.stop();
+      pausedTimeRef.current = 0;
+      startTimeRef.current = 0;
+    } else {
+      if (!audioContextRef.current || !analyserRef.current) {
+        return;
+      }
+
+      bufferSourceRef.current = audioContextRef.current.createBufferSource();
+      bufferSourceRef.current.buffer = audioBufferRef.current;
+      bufferSourceRef.current.connect(analyserRef.current);
+
+      startTimeRef.current = audioContextRef.current.currentTime;
+      bufferSourceRef.current.start();
+
+      requestAnimationFrame(draw);
+    }
+
+    setIsPlaying((prev) => !prev);
+  };
+
+  const getCurrentPlaybackTime = () => {
+    if (!audioContextRef.current) return 0;
+
+    if (isPlaying) {
+      return (
+        pausedTimeRef.current +
+        (audioContextRef.current.currentTime - startTimeRef.current)
+      );
+    } else {
+      return pausedTimeRef.current;
+    }
+  };
+
+  const percentComplete =
+    getCurrentPlaybackTime() / (audioBufferRef.current?.duration ?? 1);
+
+  useEffect(() => {
+    if (!audioContextRef.current) {
+      audioContextRef.current = new AudioContext();
+    }
+
+    if (!analyserRef.current) {
+      analyserRef.current = audioContextRef.current.createAnalyser();
+      analyserRef.current.fftSize = FFT_SIZE;
+      analyserRef.current.smoothingTimeConstant = 0.8;
+
+      analyserRef.current.connect(audioContextRef.current.destination);
+    }
+
+    const fetchBuffer = async () => {
+      setIsLoading(true);
+
+      audioBufferRef.current = await fetch(audioUrl)
+        .then((response) => response.arrayBuffer())
+        .then((arrayBuffer) =>
+          audioContextRef.current!.decodeAudioData(arrayBuffer)
+        );
+
+      setIsLoading(false);
+    };
+
+    fetchBuffer();
+
+    return () => {
+      audioContextRef.current?.close();
+    };
+  }, [audioUrl]);
 
   return {
     isPlaying,
